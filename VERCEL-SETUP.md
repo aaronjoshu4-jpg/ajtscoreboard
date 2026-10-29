@@ -49,6 +49,9 @@ Replace `SITE` with your address and `CODE` with the VIEW_CODE:
 ## 5. Set up the event and rehearse
 Control center → Players (roster, photos named after each player, Reclub links) → Courts (add doubles matches: two boxes per team) → Awards. Rehearse tomorrow with real phones on mobile data and the real TV, then **Settings & Data → Reset** to clear test data.
 
+## Quick check: is everything connected?
+Open `https://SITE/api/health` in a browser. It lists each setting as set/MISSING/WRONG and tests the database. It must say **"verdict": "ALL GOOD"**. It never shows your secret values. If it says something else, it tells you exactly what to fix.
+
 ## If something doesn't work
 - **"Scoreboard not set up"** → the two Supabase variables are missing/wrong; fix and redeploy.
 - **Code screen keeps returning** → the code is case-sensitive; check `VIEW_CODE`.

@@ -42,9 +42,13 @@
           const pin = localStorage.getItem('ajt_pin'); const h = {}; if (staff && pin) h['x-pin'] = pin;
           const r = await fetch('/api/state' + (staff ? '' : '?c=1'), { cache: 'no-store', headers: h });
           if (r.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
-          const j = await r.json(); if (!r.ok) throw new Error(j.error || 'error');
+          let j; try { j = await r.json(); } catch (x) { throw new Error('The scoreboard server did not answer (error ' + r.status + '). Open /api/health to see why.'); }
+          if (!r.ok) throw new Error((j && j.error) || ('Server error ' + r.status) + ' — open /api/health to see why.');
           connected = true; if (App.onStatus) App.onStatus(true); apply(j);
-        } catch (e) { connected = false; if (App.onStatus) App.onStatus(false); }
+        } catch (e) {
+          connected = false; if (App.onStatus) App.onStatus(false);
+          const msg = e && e.message; if (msg && !/Failed to fetch|NetworkError|Load failed/i.test(msg) && Date.now() - (poll.last || 0) > 20000) { poll.last = Date.now(); App.toast(msg, 'err'); }
+        }
       };
       ready.then(() => { poll(); setInterval(poll, every); });
       return;

@@ -733,6 +733,21 @@ function viewFor(state, level) {
 const handle = async (req) => {
   const u = new URL(req.url); const p = u.pathname.replace(/^\/api\/photos\//, '/photos/'); const ip = ipOf(req);
   try {
+    if (p === '/api/health') {   // open this in a browser to see exactly what is wrong (shows set/missing only, never the values)
+      const out = { function: 'running', env: {}, database: 'not checked', verdict: '' };
+      for (const k of ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'CONTROL_PIN', 'UMPIRE_PIN', 'VIEW_CODE']) out.env[k] = env(k) ? 'set' : 'MISSING';
+      const url = env('SUPABASE_URL'), key = env('SUPABASE_SERVICE_KEY');
+      if (url && (/your-?project|example/i.test(url) || !/^https:\/\/[a-z0-9-]+\.supabase\.(co|com)\/?$/i.test(url))) out.env.SUPABASE_URL = 'WRONG — must look like https://abcdefghij.supabase.co (copy it from Supabase → Project Settings → API)';
+      if (key && /your-?secret|your-?key|here$/i.test(key)) out.env.SUPABASE_SERVICE_KEY = 'WRONG — still the example text; paste the real secret key';
+      if (url && key) {
+        try { await sb('ajt_kv?select=key&limit=1'); out.database = 'connected, table ajt_kv found'; out.verdict = 'ALL GOOD'; }
+        catch (e) {
+          const m = String(e.message); out.database = 'ERROR: ' + m.slice(0, 220);
+          out.verdict = /fetch failed|ENOTFOUND|invalid url/i.test(m) ? 'SUPABASE_URL is wrong or unreachable' : /401|403|invalid api key|jwt/i.test(m) ? 'SUPABASE_SERVICE_KEY is wrong (use the secret / service_role key)' : /404|42P01|ajt_kv|relation|schema cache/i.test(m) ? 'The table is missing: run supabase.sql in the Supabase SQL Editor' : 'Database problem, see the message above';
+        }
+      } else out.verdict = 'Add the missing environment variables in Vercel, then Redeploy';
+      return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+    }
     if (!env('SUPABASE_URL') || !env('SUPABASE_SERVICE_KEY')) return json(500, { ok: false, error: 'Scoreboard not set up: add SUPABASE_URL and SUPABASE_SERVICE_KEY in Netlify.' });
 
     if (p === '/api/login' && req.method === 'POST') {
