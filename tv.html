@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>window.AJT_CLOUD=1</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AJT Tennis Club — Halloween Party · Scoreboard</title>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { overflow: hidden; background: #000; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; font-size: 20px; overflow: hidden; }
+  #stage > * { position: absolute; }
+  .hdr { left: 0; right: 0; top: 0; height: 120px; display: flex; align-items: center; gap: 40px; padding: 0 56px; z-index: 5; }
+  .logo .s { font-size: 22px; letter-spacing: .32em; font-weight: 800; color: #fff; }
+  .logo .b { font-family: var(--f-disp); font-size: 58px; letter-spacing: .03em; line-height: .9; color: #fff; text-shadow: 3px 3px 0 #000; }
+  .tabs { display: flex; gap: 14px; margin-left: 30px; }
+  .tab { border: 0; font-family: var(--f-disp); font-size: 34px; letter-spacing: .07em; padding: 6px 26px 4px; border-radius: 6px; background: #170a2b; color: var(--cream); border: 3px solid var(--p5); box-shadow: 4px 4px 0 #000; transform: rotate(-1deg); }
+  .tab.on { background: var(--orange); color: #1b0a00; border-color: #000; transform: rotate(-1deg) scale(1.06); }
+  .tab:nth-child(2n) { transform: rotate(1deg); } .tab.on:nth-child(2n) { transform: rotate(1deg) scale(1.06); }
+  .hdr .right { margin-left: auto; text-align: right; display: grid; gap: 8px; justify-items: end; }
+  .clk { font-family: var(--f-disp); font-size: 54px; line-height: 1; color: var(--green); text-shadow: 0 0 18px rgba(157, 255, 46, .5); }
+  .main { left: 56px; right: 56px; top: 132px; bottom: 82px; z-index: 3; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; height: 100%; align-content: start; }
+  .cols.one { grid-template-columns: 1fr; }
+  .court { cursor: pointer; }
+  .court.big { font-size: 1.22em; }
+  .ticker { left: 0; right: 0; bottom: 0; height: 66px; background: var(--cream); color: var(--tagInk); display: flex; align-items: center; z-index: 6; overflow: hidden; border-top: 5px solid #000; }
+  .ticker .lbl { background: var(--orange); height: 100%; display: flex; align-items: center; padding: 0 30px; font-family: var(--f-disp); font-size: 34px; letter-spacing: .08em; color: #1b0a00; flex: none; }
+  .ticker .scroll { white-space: nowrap; font-weight: 800; font-size: 30px; letter-spacing: .06em; text-transform: uppercase; padding-left: 100%; animation: marq 32s linear infinite; }
+  @keyframes marq { to { transform: translateX(-100%); } }
+  .sect { font-family: var(--f-disp); font-size: 44px; letter-spacing: .06em; margin: 0 0 12px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .deco { z-index: 1; opacity: .95; pointer-events: none; }
+  .bat { animation: flap 5s ease-in-out infinite; } @keyframes flap { 50% { transform: translateY(14px) rotate(4deg); } }
+  .ghost { animation: float 4s ease-in-out infinite; } @keyframes float { 50% { transform: translateY(-16px); } }
+  #overlay { inset: 0; z-index: 20; background: rgba(8, 0, 18, .86); display: none; place-items: center; text-align: center; }
+  #overlay.show { display: grid; }
+  #overlay .box { background: linear-gradient(160deg, var(--p6), var(--p9)); border: 8px solid var(--orange); border-radius: 24px; padding: 40px 70px; box-shadow: 0 0 90px rgba(255, 122, 20, .5); min-width: 1000px; }
+  #overlay .gsm { font-family: var(--f-script); font-size: 64px; color: var(--green); }
+  #overlay .w { font-family: var(--f-disp); font-size: 150px; line-height: 1; color: var(--orange2); text-shadow: 6px 6px 0 #000; }
+  #overlay .sc { font-family: var(--f-disp); font-size: 96px; letter-spacing: .06em; }
+  #overlay .sm { font-size: 28px; letter-spacing: .12em; color: var(--mut); font-weight: 800; text-transform: uppercase; margin-top: 10px; }
+  #hint { right: 24px; bottom: 74px; font-size: 14px; color: var(--mut); z-index: 4; opacity: .6; letter-spacing: .1em; }
+
+  /* header robustness */
+  .logo .b { white-space: nowrap; font-size: 44px; } .logo .s { white-space: nowrap; }
+  .tab { white-space: nowrap; font-size: 26px; padding: 6px 16px 4px; }
+  .hdr { gap: 28px; } .hdr .right { flex: none; } #evtag { white-space: nowrap; font-size: 15px !important; }
+  /* live layout: two court cards + a dynamic stat spotlight */
+  .tvlive { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .92fr); gap: 28px; height: 100%; min-height: 760px; align-items: stretch; max-height: 830px; }
+  #tvc1, #tvc2 { display: grid; min-width: 0; } #tvc1 > .court, #tvc2 > .court { min-height: 0; }
+  .tvc { font-size: 19px; display: flex; flex-direction: column; } .tvc .tm { flex: 0 0 auto; padding: 1.2em .2em !important; } .tvc .sit { flex: none; margin-top: auto; }
+  .tvc .cfmt { display: none; }
+  .tvc .tm { display: grid; grid-template-columns: .7em auto minmax(0, 1fr) 62px 92px; align-items: center; gap: .45em; padding: .55em .2em; border-top: .08em solid rgba(255,255,255,.1); transition: background .4s, opacity .4s; }
+  .tvc .tm:first-of-type { border-top: 0; }
+  .tvc .tm .tn { font-family: var(--f-disp); font-size: 2.1em; letter-spacing: .03em; line-height: 1.02; min-width: 0; overflow-wrap: break-word; word-break: normal; }
+  .tvc .tm.s0 .tn { color: var(--orange2); } .tvc .tm.s1 .tn { color: var(--green); }
+  .tvc .tm.s0 .av { border-color: var(--orange); } .tvc .tm.s1 .av { border-color: var(--green); }
+  .tvc .tm .tg { font-family: var(--f-disp); font-size: 3em; line-height: 1; text-align: center; border-radius: .18em; padding: .02em 0; transition: transform .3s; }
+  .tvc .tm.s0 .tg { background: var(--sideA); color: #1b0a00; } .tvc .tm.s1 .tg { background: var(--sideB); color: #14260a; }
+  .tvc .tm .tp { font-family: var(--f-disp); font-size: 2.8em; line-height: 1; text-align: center; color: var(--green); text-shadow: 0 0 .4em rgba(157,255,46,.5); }
+  .tvc .tm .ball { width: .8em; height: .8em; border-radius: 50%; }
+  .tvc .tm.serving .ball { background: radial-gradient(circle at 35% 30%, #f6ff7a, #c9ef18 55%, #86a800); box-shadow: 0 0 .7em rgba(220,255,40,.8); animation: bob 1s infinite; }
+  .tvc .tm.win { background: linear-gradient(90deg, rgba(255,255,255,.14), transparent); } .tvc .tm.lose { opacity: .55; }
+  .tvc .tm .bump { animation: bump .6s; } @keyframes bump { 40% { transform: scale(1.25); } }
+  .tvc .sit { margin-top: .4em; }
+  .kts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 6px; }
+  .kt { background: rgba(0,0,0,.35); border: 2px solid var(--p5); border-radius: 12px; padding: 10px 14px 12px; text-align: center; }
+  .kt .k { font-weight: 800; letter-spacing: .16em; font-size: 16px; color: var(--mut); text-transform: uppercase; }
+  .kt .v { font-family: var(--f-disp); font-size: 52px; line-height: 1.05; display: flex; justify-content: center; gap: 14px; align-items: baseline; } .kt .v b { font-weight: 400; } .kt .v .a { color: var(--orange2); } .kt .v .b { color: var(--green); } .kt .v i { font-style: normal; color: var(--mut); font-size: .6em; }
+  .spot { background: linear-gradient(180deg, #2b1055, #1a0634); border: .16em solid var(--cream); border-radius: .9em; padding: 16px 18px 18px; position: relative; overflow: hidden; box-shadow: 0 0 0 .2em #000, 0 14px 40px rgba(0,0,0,.5); cursor: pointer; display: flex; flex-direction: column; } .spot #spbody { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; padding-bottom: 8px; } .spot #spbody .stats { flex: 1; align-content: space-evenly; }
+  .spot .spt { font-family: var(--f-disp); font-size: 34px; letter-spacing: .08em; color: var(--green); margin: 0 0 8px; text-shadow: 2px 2px 0 #000; }
+  .spchips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .spchips b { font-family: var(--f-disp); font-weight: 400; font-size: 21px; letter-spacing: .08em; padding: 3px 12px 1px; border-radius: 6px; border: 2px solid var(--p5); color: var(--cream); background: #170a2b; cursor: pointer; }
+  .spchips b.on { background: var(--orange); color: #1b0a00; border-color: #000; transform: rotate(-1.5deg) scale(1.05); }
+  .spprog { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(255,255,255,.12); } .spprog i { display: block; height: 100%; width: 0; background: var(--green); transition: width 1s linear; }
+  .spot .sph { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .spot .sph .sd { display: grid; justify-items: center; gap: 4px; min-width: 0; } .spot .sph b { font-family: var(--f-disp); font-weight: 400; font-size: 27px; line-height: 1; text-align: center; }
+  .spot .sph .sd.a b { color: var(--orange2); } .spot .sph .sd.b b { color: var(--green); } .spot .sph .x { font-family: var(--f-script); font-size: 32px; color: var(--cream); }
+  .spot .sph .sd.a .av { border-color: var(--orange); } .spot .sph .sd.b .av { border-color: var(--green); }
+  .spot .srow { grid-template-columns: 108px 1fr 108px; padding: 3px 0; } .spot .srow .va, .spot .srow .vb { white-space: nowrap; font-size: 24px; font-family: var(--f-disp); font-weight: 400; transition: transform .3s; }
+  .spot .srow .lab { font-size: 15px; } .spot .srow .bar { height: 12px; } .spot .srow .bar i { transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .spot .srow.lead-a .va, .spot .srow.lead-b .vb { text-shadow: 0 0 14px currentColor; }
+  .spot .srow .pop { animation: bump .6s; }
+  .spot .stats { gap: 10px; margin-top: 4px; }
+  .spot .hint2 { color: var(--mut); font-size: 16px; letter-spacing: .08em; margin-top: 8px; text-align: center; font-weight: 800; }
+  .spot .lrow { display: grid; grid-template-columns: 1.4em auto 1fr auto; gap: 10px; align-items: center; padding: 6px 0; border-top: 2px solid rgba(255,255,255,.08); font-size: 26px; }
+  .spot .lrow .rn { font-family: var(--f-disp); color: var(--orange2); font-size: 34px; } .spot .lrow .nm { font-family: var(--f-disp); font-size: 31px; letter-spacing: .03em; } .spot .lrow .rc { color: var(--mut); font-weight: 800; font-size: 20px; text-align: right; } 
+  .spot .nx { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; background: rgba(255,255,255,.06); border: 2px solid var(--p5); border-radius: 12px; padding: 10px 12px; margin: 8px 0; } .spot .nx.first { border-color: var(--orange); background: rgba(255,122,20,.12); }
+  .spot .nx .nxs { display: grid; justify-items: center; gap: 4px; min-width: 0; } .spot .nx b { font-family: var(--f-disp); font-weight: 400; font-size: 27px; text-align: center; line-height: 1.05; } .spot .nx .a b { color: var(--orange2); } .spot .nx .b b { color: var(--green); } .spot .nx i { font-family: var(--f-script); font-style: normal; font-size: 30px; color: var(--cream); }
+  .spot .lvl { font-family: var(--f-disp); font-size: 26px; letter-spacing: .1em; margin: 8px 0 2px; } .spot .qi { font-size: 21px; }
+  .empty { text-align: center; padding: 80px; font-family: var(--f-disp); font-size: 60px; color: var(--mut); }
+</style>
+</head>
+<body>
+<div id="stage" class="spooky-bg">
+  <div class="zig" style="left:-40px;top:-30px;width:520px;height:330px;opacity:.9"><svg viewBox="0 0 520 330" width="100%" height="100%" preserveAspectRatio="none"><polygon points="0,0 520,0 300,120 420,140 160,250 230,150 0,330" fill="#0b0612"/><polyline points="0,300 215,150 150,140 320,60 290,50 480,0" fill="none" stroke="#ff7a14" stroke-width="10"/><polyline points="0,330 230,165 160,155 335,72 305,62 500,6" fill="none" stroke="#9dff2e" stroke-width="5"/></svg></div>
+  <div class="zig" style="right:-30px;bottom:60px;width:360px;height:420px;opacity:.9;transform:scaleX(-1)"></div>
+  <div class="deco" style="left:0;top:0;width:150px;height:150px" id="webL"></div>
+  <div class="deco" style="right:0;top:0;width:150px;height:150px;transform:scaleX(-1)" id="webR"></div>
+  <div class="deco bat" style="left:760px;top:6px;width:110px;height:48px" id="bat1"></div>
+  <div class="deco bat" style="right:430px;top:60px;width:70px;height:30px;animation-delay:-2s" id="bat2"></div>
+
+  <div class="hdr">
+    <div class="logo"><div class="s">AJT TENNIS CLUB</div><div class="b" id="ttl">HALLOWEEN PARTY</div></div>
+    <div class="tabs" id="tabs">
+      <button class="tab" data-tab="live">LIVE SCORES</button>
+      <button class="tab" data-tab="next">UP NEXT</button>
+      <button class="tab" data-tab="rank">TOP PLAYERS</button>
+      <button class="tab" data-tab="awards">AWARDS</button>
+    </div>
+    <div class="right"><div class="clk" id="clk">--:--</div><span class="tag hide" id="delay" style="background:#ff4d6d;color:#fff;font-size:18px"></span><span class="tag" id="evtag" style="font-size:20px"></span></div>
+  </div>
+  <div id="hint">TAP A TAB · TAP A COURT TO ZOOM · F = FULLSCREEN</div>
+  <div class="main" id="main"></div>
+  <div class="ticker"><div class="lbl">SPOOKY NEWS</div><div style="overflow:hidden;flex:1;height:100%;display:flex;align-items:center"><div class="scroll" id="tick"></div></div></div>
+  <div id="overlay"><div class="box" id="ovbox"></div></div>
+</div>
+
+<script src="/engine.js"></script>
+<script src="/common.js"></script>
+<script>
+(function () {
+  const E = window.TennisEngine; const $ = (id) => document.getElementById(id), esc = App.esc;
+  const stage = $('stage');
+  function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+  addEventListener('resize', fit); fit();
+  $('webL').innerHTML = App.deco.web(); $('webR').innerHTML = App.deco.web();
+  $('bat1').innerHTML = App.deco.bat('#0b0612'); $('bat2').innerHTML = App.deco.bat('#0b0612');
+  stage.querySelector('.zig[style*="bottom"]').innerHTML = App.deco.zig();
+
+  let tab = 'live', pausedUntil = 0, spot = null, lastTabChange = Date.now(), lastHTML = '', ovTimer = null;
+  const seqFor = (v) => {
+    const a = v.awards || {}; const hasAwards = Object.values(a.dressed || {}).some(Boolean) || ((a.raffle || {}).prizes || []).some((p) => p.winner) || Object.values(v.topPlayers || {}).some(Boolean);
+    return hasAwards ? ['live', 'live', 'next', 'rank', 'awards'] : ['live', 'live', 'next', 'rank'];
+  };
+  let seqIdx = 0;
+
+  function bodyFor(v) {
+    if (v.empty) return '<div class="empty">Waiting for the venue…</div>';
+    const courts = Object.values(v.courts);
+    if (tab === 'live') {
+      if (spot && v.courts[spot]) return `<div class="cols one">${App.courtCard(v.courts[spot])}</div>`;
+      return '<div class="tvlive" id="tvlive"></div>';
+    }
+    if (tab === 'next') {
+      return `<div class="cols">${courts.map((c) => {
+        const fin = v.completed.filter((m) => m.court === c.id).slice(0, 3);
+        return `<div class="panel" style="min-height:760px"><h3><span class="tag ${c.id === '1' ? 'g' : 'o'}" style="font-size:.9em">${esc(c.cfg.name)}</span><span style="color:${c.id === '1' ? 'var(--green)' : 'var(--orange2)'}">${esc(c.cfg.level)}</span></h3>
+          ${c.current && c.current.status !== 'finished' ? `<div class="mut" style="font-weight:800;letter-spacing:.14em;margin:.2em 0">ON COURT NOW</div><div class="qi" style="grid-template-columns:2.4em 1fr"><div class="n">●</div><div class="t">${App.sideAvatars(c.current.names[0], '1em')}<span class="a">${esc(App.sideLabel(c.current.names[0]))}</span><span class="x">vs</span>${App.sideAvatars(c.current.names[1], '1em')}<span class="b">${esc(App.sideLabel(c.current.names[1]))}</span></div></div>` : ''}
+          <div class="mut" style="font-weight:800;letter-spacing:.14em;margin:.8em 0 .3em">UP NEXT</div>${App.queueList(c.id, { limit: 6 })}
+          ${fin.length ? `<div class="mut" style="font-weight:800;letter-spacing:.14em;margin:1em 0 .3em">JUST FINISHED</div>${fin.map((m) => `<div class="qi" style="grid-template-columns:1fr auto;opacity:.85"><div class="t">${esc(App.sideLabel(m.names[0]))}<span class="x">vs</span>${esc(App.sideLabel(m.names[1]))}</div><div class="pt" style="font-family:var(--f-disp);font-size:1.7em;color:var(--green)">${m.games[0]}–${m.games[1]}</div></div>`).join('')}` : ''}
+        </div>`;
+      }).join('')}</div>`;
+    }
+    if (tab === 'rank') {
+      return `<div class="cols">${courts.map((c) => `<div class="panel" style="min-height:760px"><h3><span class="tag ${c.id === '1' ? 'g' : 'o'}" style="font-size:.9em">TOP PLAYERS</span><span style="color:${c.id === '1' ? 'var(--green)' : 'var(--orange2)'}">${esc(c.cfg.level)}</span></h3>${App.rankTable(c.cfg.level, { limit: 8 })}<div class="mut" style="font-size:.75em;margin-top:.6em;letter-spacing:.08em">WIN = 3 PTS · DRAW = 2 · LOSS = 1 · TIE-BREAK: GAME DIFFERENCE</div></div>`).join('')}</div>`;
+    }
+    if (tab === 'awards') {
+      return `<div class="grid2" style="margin-bottom:20px">${App.topPlayerCards()}</div><div class="grid3" style="margin-bottom:20px">${App.dressedCards()}</div><div class="panel"><h3>🎟️ RAFFLE WINNERS</h3><div style="columns:2;column-gap:24px">${App.raffleList()}</div></div>`;
+    }
+    return '';
+  }
+
+  function render(v) {
+    if (!v.empty) {
+      $('ttl').textContent = (v.event.subtitle || '').toUpperCase();
+      $('evtag').textContent = `${v.event.date.replace(/, \d{4}/, '')} · ${v.event.time} · ${v.event.venue}`;
+      $('tick').textContent = v.ticker || v.event.tagline;
+    }
+    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    const html = bodyFor(v);
+    if (html !== lastHTML) { $('main').innerHTML = html; lastHTML = html; liveBuilt = false; }
+    if (tab === 'live' && !spot && !v.empty) updateLive(v);
+  }
+
+  /* ---------- LIVE tab: court cards + dynamic spotlight ---------- */
+  let liveBuilt = false, courtHTML = {}, spIdx = 0, spPaused = 0, spLast = Date.now(), spKey = '', spBound = false;
+  const SP = [['c1', 'COURT 1 STATS'], ['c2', 'COURT 2 STATS'], ['lead', 'LEADERS'], ['next', 'UP NEXT']]; const SP_MS = 9000;
+  const first = (n) => App.dispName(n).trim().split(/\s+/)[0];
+  const teamName = (str) => { const ns = App.sideNames(str); return ns.length > 1 ? ns.map((n) => esc(first(n))).join(' &amp; ') : esc(App.dispName(ns[0] || '')); };
+  function tvCourt(c) {
+    const m = c.current;
+    if (!m || (m.status !== 'live' && m.status !== 'finished')) return App.courtCard(c, { compact: true });
+    const live = m.status === 'live', fin = !live;
+    const chip = live ? '<span class="chip live">Live</span>' : '<span class="chip final">Final</span>';
+    const row = (sd) => {
+      const cls = ['tm', 's' + sd]; if (live && m.server === sd) cls.push('serving'); if (fin && m.winner === sd) cls.push('win'); if (fin && m.winner !== sd && m.winner !== -1) cls.push('lose');
+      return `<div class="${cls.join(' ')}"><span class="ball"></span>${App.sideAvatars(m.names[sd], '5.2em')}<div class="tn">${teamName(m.names[sd])}</div><div class="tg" data-k="g${sd}:${m.games[sd]}">${m.games[sd]}</div><div class="tp">${fin ? (m.winner === sd ? '★' : '') : esc(m.ptext[sd])}</div></div>`;
+    };
+    let sit = '';
+    if (live) {
+      if (m.sit) sit += `<span class="badge ${m.sit.kind}">${esc(m.sit.label)}</span>`;
+      if (m.faultPending) sit += '<span class="badge fault">2ND SERVE</span>';
+      sit += `<span class="mut" style="font-size:.8em;letter-spacing:.1em;font-weight:800">SERVING: ${teamName(m.names[m.server])}</span>`;
+    } else sit = `<div class="final-ribbon" style="width:100%"><span class="tag o">${m.winner === -1 ? 'Match drawn' : teamName(m.names[m.winner]) + ' win!'}</span></div>`;
+    const sr = E.statRows(m), pick = (re) => sr.find((r) => re.test(r.label.toLowerCase()));
+    const tiles = [/^aces/, /winners/, /double/, /unforced/].map(pick).filter(Boolean).map((r) => `<div class="kt"><div class="k">${esc(r.label)}</div><div class="v"><b class="a">${esc(r.fa)}</b><i>–</i><b class="b">${esc(r.fb)}</b></div></div>`).join('');
+    return `<section class="court tvc c${c.cfg.id}" data-court="${c.cfg.id}"><div class="ch"><span class="ctag">${esc(c.cfg.name)}</span><span class="clevel">${esc(c.cfg.level)}</span>${chip}<span class="mut" style="margin-left:auto;font-weight:800;letter-spacing:.1em;font-size:.8em">FIRST TO ${c.cfg.gamesTo}</span></div>${row(0)}${row(1)}<div class="kts">${tiles}</div><div class="sit">${sit}</div>${App.gameLogHTML(m)}</section>`;
+  }
+  function spotPage(v, key) {
+    if (key === 'c1' || key === 'c2') {
+      const c = v.courts[key.slice(1)], m = c && c.current;
+      if (!m || m.status === 'warmup' || m.status === 'ready') return { k: key + ':wait', html: `<div class="hint2" style="margin-top:60px;font-size:24px">${m ? 'MATCH STARTING SOON' : 'COURT OPEN'}<br><span style="font-size:18px;font-weight:600">Live stats appear here once the first point is played</span></div>` };
+      const rows = E.statRows(m);
+      const head = `<div class="sph"><div class="sd a">${App.sideAvatars(m.names[0], '60px')}<b>${teamName(m.names[0])}</b></div><div class="x">vs</div><div class="sd b">${App.sideAvatars(m.names[1], '60px')}<b>${teamName(m.names[1])}</b></div></div>`;
+      return { k: key + ':' + m.id, rows, m, html: head + `<div class="stats">${rows.map((r) => `<div class="srow"><span class="va"></span><div class="mid"><div class="lab">${esc(r.label)}</div><div class="bar"><i class="ba" style="width:50%"></i><i class="bb" style="width:50%"></i></div></div><span class="vb"></span></div>`).join('')}</div>` + (m.status === 'finished' ? '<div class="hint2">FINAL STATS</div>' : '') };
+    }
+    if (key === 'lead') {
+      const html = Object.values(v.courts).map((c) => {
+        const rows = (v.rankings[c.cfg.level] || []).filter((r) => r.W + r.L + r.D > 0).slice(0, 3);
+        return `<div class="lvl" style="color:${c.id === '1' ? 'var(--green)' : 'var(--orange2)'}">${esc(c.cfg.level.toUpperCase())}</div>` + (rows.length ? rows.map((r) => `<div class="lrow"><span class="rn">${r.rank}</span>${App.avatar(r.name, '52px')}<span class="nm">${esc(App.dispName(r.name))}</span><span class="rc">${r.W}-${r.L}${r.D ? '-' + r.D : ''} · ${r.pts} PTS${r.streak > 1 ? ' · 🔥' + r.streak : ''}</span></div>`).join('') : '<div class="mut" style="padding:10px 4px;font-size:22px;font-weight:800;letter-spacing:.06em">Rankings appear after the first match finishes</div>');
+      }).join('');
+      return { k: 'lead:' + html.length, html };
+    }
+    const html = Object.values(v.courts).map((c) => {
+      const q = (v.queue[c.id] || []).slice(0, 2);
+      return `<div class="lvl" style="color:${c.id === '1' ? 'var(--green)' : 'var(--orange2)'}">${esc(c.cfg.name.toUpperCase())} · NEXT UP</div>` + (q.length ? q.map((m, i) => `<div class="nx${i === 0 ? ' first' : ''}"><div class="nxs a">${App.sideAvatars(m.names[0], '52px')}<b>${teamName(m.names[0])}</b></div><i>vs</i><div class="nxs b">${App.sideAvatars(m.names[1], '52px')}<b>${teamName(m.names[1])}</b></div></div>`).join('') : '<div class="mut" style="padding:8px 4px;font-size:22px;font-weight:800">Nothing queued</div>');
+    }).join('');
+    return { k: 'next:' + html.length, html };
+  }
+  function updateLive(v) {
+    const root = $('tvlive'); if (!root) return;
+    if (!liveBuilt) { root.innerHTML = '<div id="tvc1"></div><div id="tvc2"></div><div class="spot" id="spot"><div class="spt">STAT SPOTLIGHT</div><div class="spchips" id="spchips"></div><div id="spbody"></div><div class="spprog"><i id="spprog"></i></div></div>'; liveBuilt = true; courtHTML = {}; spKey = ''; }
+    // court cards (replace only when their content changed; flash the games box when a game is won)
+    Object.values(v.courts).forEach((c) => {
+      const h = tvCourt(c), el = $('tvc' + c.id); if (!el || courtHTML[c.id] === h) return;
+      const prev = courtHTML[c.id]; courtHTML[c.id] = h; el.innerHTML = h;
+      if (prev) el.querySelectorAll('.tg').forEach((g) => { const k = g.dataset.k; if (prev.indexOf('data-k="' + k + '"') < 0) g.classList.add('bump'); });
+    });
+    // spotlight
+    const now = Date.now();
+    if (now > spPaused && now - spLast > SP_MS) { spIdx = (spIdx + 1) % SP.length; spLast = now; }
+    const key = SP[spIdx][0];
+    $('spchips').innerHTML = SP.map((x, i) => `<b class="${i === spIdx ? 'on' : ''}" data-i="${i}">${x[1]}</b>`).join('');
+    $('spprog').style.width = now < spPaused ? '100%' : Math.min(100, ((now - spLast) / SP_MS) * 100) + '%';
+    const pg = spotPage(v, key), body = $('spbody');
+    if (pg.k !== spKey) { spKey = pg.k; body.innerHTML = pg.html; body.dataset.vals = ''; }
+    if (pg.rows) {   // in-place update so numbers pop and bars slide instead of the panel flickering
+      const els = body.querySelectorAll('.srow'); const vals = body.dataset.vals ? JSON.parse(body.dataset.vals) : [];
+      pg.rows.forEach((r, i) => {
+        const el = els[i]; if (!el) return; const tot = r.a + r.b, pa = tot ? (100 * r.a) / tot : 50;
+        el.querySelector('.va').textContent = r.fa; el.querySelector('.vb').textContent = r.fb;
+        el.querySelector('.ba').style.width = pa + '%'; el.querySelector('.bb').style.width = (100 - pa) + '%';
+        el.classList.toggle('lead-a', r.a > r.b); el.classList.toggle('lead-b', r.b > r.a);
+        const sig = r.fa + '|' + r.fb; if (vals[i] !== undefined && vals[i] !== sig) { const t = vals[i].split('|')[0] !== r.fa ? el.querySelector('.va') : el.querySelector('.vb'); t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop'); }
+        vals[i] = sig;
+      });
+      body.dataset.vals = JSON.stringify(vals);
+    }
+    if (!spBound) { spBound = true; $('main').addEventListener('click', (e) => {
+      const chip = e.target.closest && e.target.closest('.spchips b');
+      if (chip) { spIdx = +chip.dataset.i; spLast = Date.now(); spPaused = Date.now() + 25000; if (App.view) updateLive(App.view); return; }
+      if (e.target.closest && e.target.closest('#spot')) { spIdx = (spIdx + 1) % SP.length; spLast = Date.now(); spPaused = Date.now() + 25000; if (App.view) updateLive(App.view); }
+    }); }
+  }
+
+  function pickTab(v) {
+    if (v.empty) return;
+    const now = Date.now();
+    if (!v.tv.auto) { tab = v.tv.tab; return; }
+    if (now < pausedUntil) return;
+    const seq = seqFor(v);
+    if (now - lastTabChange > (v.tv.interval || 18) * 1000) {
+      seqIdx = (seqIdx + 1) % seq.length; tab = seq[seqIdx]; lastTabChange = now; spot = null;
+    }
+    if (!seq.includes(tab)) { tab = seq[0]; seqIdx = 0; }
+  }
+
+  function showFinal(c, m) {
+    const w = m.winner;
+    $('ovbox').innerHTML = `<div class="gsm">game, set, match!</div><div class="w">${w === -1 ? 'IT’S A DRAW' : esc(App.sideLabel(m.names[w]))}</div><div style="margin:10px 0">${w === -1 ? '' : App.sideAvatars(m.names[w], '110px')}</div><div class="sc">${m.games[0]} – ${m.games[1]}</div><div class="sm">${esc(c.cfg.name)} · ${esc(c.cfg.level)}${m.endedBy === 'manual' ? ' · ended early' : ''}</div><div class="sm" style="color:var(--green)">${m.stats[0].aces + m.stats[1].aces} aces · ${m.stats[0].winners + m.stats[1].winners} winners · best streak ${Math.max(m.best[0], m.best[1])} pts</div>`;
+    $('overlay').classList.add('show'); clearTimeout(ovTimer); ovTimer = setTimeout(() => $('overlay').classList.remove('show'), 11000);
+  }
+
+  App.connect({
+    role: 'tv',
+    onState(v, prev) {
+      if (!v.empty && prev && !prev.empty) {
+        for (const c of Object.values(v.courts)) {
+          const pm = prev.courts[c.id] && prev.courts[c.id].current;
+          if (c.current && c.current.status === 'finished' && pm && pm.id === c.current.id && pm.status !== 'finished') { showFinal(c, c.current); }
+        }
+      }
+      pickTab(v); render(v);
+    }
+  });
+  setInterval(() => { if (App.view) { pickTab(App.view); render(App.view); } }, 1000);
+  setInterval(() => {
+    const v = App.view, el = $('delay'); if (!v || v.mode !== 'mirror' || !v.pushedAt) { el.classList.add('hide'); return; }
+    const age = App.now() - v.pushedAt; if (age > 60000) { el.textContent = 'SCORES MAY BE DELAYED'; el.classList.remove('hide'); } else el.classList.add('hide');
+  }, 5000);
+  setInterval(() => { $('clk').textContent = new Date(App.now()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }, 1000);
+
+  $('tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('.tab'); if (!b) return; tab = b.dataset.tab; spot = null; pausedUntil = Date.now() + 30000; lastTabChange = Date.now(); render(App.view || { empty: true });
+  });
+  $('main').addEventListener('click', (e) => {
+    const c = e.target.closest('.court'); if (!c || tab !== 'live') return;
+    spot = spot ? null : c.dataset.court; pausedUntil = Date.now() + 30000; lastHTML = ''; render(App.view);
+  });
+  $('overlay').addEventListener('click', () => $('overlay').classList.remove('show'));
+  addEventListener('keydown', (e) => {
+    const map = { 1: 'live', 2: 'next', 3: 'rank', 4: 'awards' };
+    if (map[e.key]) { tab = map[e.key]; spot = null; pausedUntil = Date.now() + 30000; render(App.view); }
+    if (e.key === 'f' || e.key === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+    if (e.key === 'Escape') { spot = null; $('overlay').classList.remove('show'); }
+  });
+  let idle; const hideCursor = () => { document.body.style.cursor = ''; clearTimeout(idle); idle = setTimeout(() => { document.body.style.cursor = 'none'; }, 3000); };
+  addEventListener('mousemove', hideCursor); hideCursor();
+})();
+</script>
+</body>
+</html>

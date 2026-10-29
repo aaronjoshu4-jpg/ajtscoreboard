@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>window.AJT_CLOUD=1</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a0634">
+<title>Live Scores — AJT Tennis Club Halloween Party</title>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  body { font-size: 14px; padding-bottom: 40px; }
+  .hd { padding: 14px 14px 8px; text-align: center; position: relative; }
+  .hd .s { font-size: 12px; letter-spacing: .3em; font-weight: 800; }
+  .hd .b { font-family: var(--f-disp); font-size: 38px; line-height: .95; text-shadow: 2px 2px 0 #000; }
+  .hd .m { margin-top: 6px; }
+  .tabs { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px 10px; background: rgba(11, 6, 18, .95); border-bottom: 3px solid var(--p5); }
+  .tab { border: 2px solid var(--p5); background: #170a2b; color: var(--cream); font-family: var(--f-disp); font-size: 18px; letter-spacing: .05em; padding: 6px 2px 4px; border-radius: 8px; }
+  .tab.on { background: var(--orange); color: #1b0a00; border-color: #000; }
+  .body { padding: 12px 10px; display: grid; gap: 12px; max-width: 760px; margin: 0 auto; }
+  .court { cursor: pointer; font-size: 13px; } .court .cfmt { display: none; }
+  .court .sbrow .pname { font-size: 1.7em; } .court .sbrow .games, .court .sbrow .pts { font-size: 2.4em; }
+  .more { text-align: center; font-size: 12px; color: var(--mut); letter-spacing: .1em; font-weight: 800; margin-top: 6px; }
+  .grid2, .grid3 { display: grid; gap: 10px; grid-template-columns: 1fr; }
+  .stale { background: var(--danger); color: #fff; text-align: center; font-weight: 800; padding: 4px; font-size: 12px; letter-spacing: .08em; }
+</style>
+</head>
+<body class="spooky-bg">
+<div id="stale" class="stale hide">OFFLINE — showing last known scores</div>
+<div id="delay" class="stale hide" style="background:#7a3d00"></div>
+<div class="hd"><div class="s">AJT TENNIS CLUB</div><div class="b" id="ttl">HALLOWEEN PARTY</div><div class="m"><span class="tag" id="evtag" style="font-size:12px"></span></div></div>
+<div class="tabs" id="tabs"><button class="tab on" data-t="live">LIVE</button><button class="tab" data-t="next">NEXT</button><button class="tab" data-t="rank">RANKS</button><button class="tab" data-t="awards">AWARDS</button></div>
+<div class="body" id="body"></div>
+<script src="/engine.js"></script>
+<script src="/common.js"></script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s), esc = App.esc;
+  let tab = 'live'; const open = new Set(); let last = '';
+  function render(v) {
+    if (!v || v.empty) { $('#body').innerHTML = '<div class="panel idle"><div class="h">Scores will appear here once the party starts 🎃</div></div>'; return; }
+    $('#ttl').textContent = (v.event.subtitle || '').toUpperCase(); $('#evtag').textContent = `${v.event.date.replace(/, \d{4}/, '')} · ${v.event.time} · ${v.event.venue}`;
+    const courts = Object.values(v.courts); let h = '';
+    if (tab === 'live') {
+      h = courts.map((c) => App.courtCard(c, { compact: !open.has(c.id) }) + (c.current && c.current.status !== 'warmup' && c.current.status !== 'ready' ? `<div class="more" data-more="${c.id}">${open.has(c.id) ? '▲ HIDE STATS' : '▼ TAP FOR MATCH STATS'}</div>` : '')).join('');
+    } else if (tab === 'next') {
+      h = courts.map((c) => `<div class="panel"><h3><span class="tag ${c.id === '1' ? 'g' : 'o'}">${esc(c.cfg.name)}</span><span>${esc(c.cfg.level)}</span></h3>${App.queueList(c.id, { limit: 8 })}</div>`).join('');
+    } else if (tab === 'rank') {
+      h = courts.map((c) => `<div class="panel"><h3><span class="tag ${c.id === '1' ? 'g' : 'o'}">TOP PLAYERS</span><span>${esc(c.cfg.level)}</span></h3><div style="overflow-x:auto">${App.rankTable(c.cfg.level, { limit: 12 })}</div></div>`).join('') + '<div class="mut" style="text-align:center;font-size:12px">WIN 3 · DRAW 2 · LOSS 1 · TIE-BREAK: GAME DIFFERENCE</div>';
+    } else {
+      h = App.topPlayerCards() + App.dressedCards() + `<div class="panel"><h3>🎟️ RAFFLE</h3>${App.raffleList()}</div>`;
+    }
+    if (h !== last) { const y = scrollY; $('#body').innerHTML = h; last = h; scrollTo(0, y); }
+  }
+  $('#tabs').onclick = (e) => { const b = e.target.closest('.tab'); if (!b) return; tab = b.dataset.t; document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b)); last = ''; render(App.view); };
+  $('#body').onclick = (e) => { const m = e.target.closest('[data-more]') || e.target.closest('.court'); if (!m) return; const id = m.dataset.more || m.dataset.court; open.has(id) ? open.delete(id) : open.add(id); last = ''; render(App.view); };
+  function checkDelay() {
+    const v = App.view, el = $('#delay'); if (!v || v.mode !== 'mirror' || !v.pushedAt) { el.classList.add('hide'); return; }
+    const age = App.now() - v.pushedAt;
+    if (age > 60000) { el.textContent = `Scores may be delayed — last update ${Math.floor(age / 60000)} min ago`; el.classList.remove('hide'); } else el.classList.add('hide');
+  }
+  setInterval(checkDelay, 5000);
+  App.connect({ role: 'viewer', onState: (v, p) => { render(v, p); checkDelay(); }, onStatus: (s) => $('#stale').classList.toggle('hide', s) });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>window.AJT_CLOUD=1</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1a0634">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Umpire — AJT Tennis Club</title>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
+  body { font-size: 16px; min-height: 100%; padding-bottom: env(safe-area-inset-bottom); }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 8px 10px 90px; }
+  .top { display: flex; align-items: center; gap: 8px; padding: 6px 2px 8px; }
+  .top .t { font-family: var(--f-disp); font-size: 26px; letter-spacing: .05em; line-height: 1; }
+  .top .l { font-size: 12px; letter-spacing: .12em; font-weight: 800; color: var(--green); text-transform: uppercase; }
+  .top .r { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--mut); }
+  .court { font-size: 15px; padding: .6em .7em .7em; }
+  .court .ch, .court .stats, .court .glog { display: none; }
+  .court .sbrow .pname { font-size: 1.55em; } .court .sbrow .games, .court .sbrow .pts { font-size: 2.3em; }
+  .court .sit { margin: .35em 0 0; } .court .badge { font-size: 1.1em; }
+  .big { width: 100%; padding: 16px; font-size: 22px; }
+  .stack { display: grid; gap: 10px; margin-top: 12px; }
+  .side { border-radius: 14px; padding: 8px; border: 3px solid; display: grid; gap: 7px; }
+  .side.a { border-color: var(--orange); background: rgba(255, 122, 20, .1); }
+  .side.b { border-color: var(--green); background: rgba(157, 255, 46, .08); }
+  .side .hd { display: flex; align-items: center; gap: 8px; font-family: var(--f-disp); font-size: 26px; letter-spacing: .04em; line-height: 1; }
+  .side.a .hd { color: var(--orange2); } .side.b .hd { color: var(--green); }
+  .side .hd .srv { margin-left: auto; font-family: var(--f-body); font-size: 12px; letter-spacing: .12em; font-weight: 800; color: #14260a; background: #d8f23a; padding: 2px 8px; border-radius: 20px; }
+  .pbtn { height: 68px; font-size: 28px; font-family: var(--f-disp); letter-spacing: .06em; border: 0; border-radius: 10px; box-shadow: 0 5px 0 rgba(0,0,0,.5); }
+  .side.a .pbtn { background: var(--orange); color: #1b0a00; } .side.b .pbtn { background: var(--green); color: #14260a; }
+  .pbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.5); }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; } .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .sbtn { height: 50px; font-size: 14px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; border-radius: 9px; border: 2px solid var(--p4); background: #1c0c36; line-height: 1.05; }
+  .sbtn:active { background: var(--p5); } .sbtn[disabled] { opacity: .25; }
+  .sbtn.warn { border-color: #ffd34d; color: #ffe27a; } .sbtn.warn.on { background: #5a4300; }
+  .sbtn.bad { border-color: var(--danger); color: #ff9fb1; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #0b0612; border-top: 3px solid var(--p5); padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; z-index: 10; }
+  .bar .btn { padding: .75em .4em; font-size: 15px; }
+  .pick { display: grid; gap: 14px; padding-top: 40px; text-align: center; }
+  .qrow { display: grid; gap: 8px; margin-top: 10px; }
+</style>
+</head>
+<body class="spooky-bg">
+<div class="wrap" id="app"></div>
+<script src="/engine.js"></script>
+<script src="/common.js"></script>
+<script>
+(function () {
+  const esc = App.esc; const app = document.getElementById('app');
+  const qs = new URLSearchParams(location.search);
+  let court = window.__AJT_COURT || qs.get('court') || (qs.get('pick') ? '' : localStorage.getItem('ajt_court')) || '';
+  if (qs.get('court')) localStorage.setItem('ajt_court', court);
+  let online = false, lock = 0;
+
+  const ok = () => { if (navigator.vibrate) navigator.vibrate(18); };
+  const guard = () => { const t = Date.now(); if (t - lock < 280) return false; lock = t; return true; };
+
+  function topBar(v, c) {
+    return `<div class="top"><div><div class="t">${esc(c.cfg.name)}</div><div class="l">${esc(c.cfg.level)} · first to ${c.cfg.gamesTo}</div></div><div class="r"><span class="dot ${online ? 'on' : ''}"></span>${online ? 'LIVE' : 'OFFLINE'}<button class="btn sm k" data-act="switch">Court</button></div></div>`;
+  }
+
+  function render(v) {
+    if (!v || v.empty) { app.innerHTML = '<div class="pick"><div class="disp" style="font-size:34px">Connecting…</div></div>'; return; }
+    if (!court || !v.courts[court]) {
+      app.innerHTML = `<div class="pick"><div class="disp" style="font-size:36px">Which court are you umpiring?</div>${Object.values(v.courts).map((c) => `<button class="btn big ${c.id === '1' ? 'g' : 'o'}" data-act="court" data-c="${c.id}">${esc(c.cfg.name)} · ${esc(c.cfg.level)}<br><small>first to ${c.cfg.gamesTo} games</small></button>`).join('')}</div>`; return;
+    }
+    const c = v.courts[court], m = c.current, q = v.queue[court] || [];
+    let h = topBar(v, c);
+    if (!m || m.status === 'finished') {
+      if (m) {
+        h += App.courtCard(c, { compact: true });
+        h += `<div class="qrow"><button class="btn k big" data-act="undo" ${m.undo ? '' : 'disabled'}>↶ Undo last point</button></div>`;
+        h += `<div style="margin-top:14px">${App.statRowsHTML(m)}</div>`;
+      } else {
+        h += `<div class="panel idle"><div class="h">NO MATCH ON COURT</div></div>`;
+      }
+      if (q.length) h += `<div class="panel" style="margin-top:12px"><div class="mut" style="font-weight:800;letter-spacing:.14em;margin-bottom:6px">UP NEXT</div>${App.faceoff(q[0])}<button class="btn o big" data-act="next">Start this match</button>${q.length > 1 ? `<div class="mut" style="margin-top:10px;font-size:13px">Then: ${q.slice(1, 4).map((x) => esc(App.sideLabel(x.names[0])) + ' vs ' + esc(App.sideLabel(x.names[1]))).join(' · ')}</div>` : ''}</div>`;
+      else h += '<div class="mut" style="text-align:center;margin-top:16px">Nothing queued — add matches from the control laptop.</div>';
+    } else if (m.status === 'warmup') {
+      h += `<div class="panel">${App.faceoff(m)}<div style="text-align:center"><div class="count" style="font-size:96px" data-ends="${m.warmupEndsAt}">${App.mmss(m.warmupEndsAt - App.now())}</div><div class="tag o">Warm-up</div></div>
+        <div class="qrow"><button class="btn o big" data-act="skipwarm">Skip warm-up → start</button><div class="grid2"><button class="btn k" data-act="addwarm">+1 min</button><button class="btn k" data-act="abort">Back to queue</button></div></div></div>`;
+    } else if (m.status === 'ready') {
+      h += `<div class="panel">${App.faceoff(m)}<div class="disp" style="text-align:center;font-size:32px;margin:6px 0">WHO SERVES FIRST?</div>
+        <div class="grid2"><button class="btn o big" data-act="start" data-s="0">${esc(App.sideLabel(m.names[0]))}</button><button class="btn g big" data-act="start" data-s="1">${esc(App.sideLabel(m.names[1]))}</button></div>
+        <div class="mut" style="text-align:center;margin-top:10px;font-size:13px">Tap the server to start the match</div>
+        <div class="qrow"><button class="btn k" data-act="abort">Back to queue</button></div></div>`;
+    } else if (m.status === 'live') {
+      h += App.courtCard(c, { compact: true });
+      const side = (s) => {
+        const srv = m.server === s, cls = s === 0 ? 'a' : 'b';
+        return `<div class="side ${cls}"><div class="hd">${App.sideAvatars(m.names[s], '1.1em')}<span>${esc(App.sideLabel(m.names[s]))}</span>${srv ? '<span class="srv">SERVING</span>' : ''}</div>
+          <button class="pbtn" data-act="pt" data-s="${s}" data-k="point">+ POINT</button>
+          <div class="grid3"><button class="sbtn" data-act="pt" data-s="${s}" data-k="ace" ${srv ? '' : 'disabled'}>Ace</button><button class="sbtn" data-act="pt" data-s="${s}" data-k="winner">Winner</button><button class="sbtn bad" data-act="pt" data-s="${s}" data-k="ue">Unforced error</button></div>
+          ${srv ? `<div class="grid2"><button class="sbtn warn ${m.faultPending ? 'on' : ''}" data-act="fault">${m.faultPending ? '1st fault ✓ (tap = DF)' : 'Fault'}</button><button class="sbtn bad" data-act="pt" data-s="${s}" data-k="df">Double fault</button></div>` : ''}</div>`;
+      };
+      h += `<div class="stack">${side(0)}${side(1)}</div>`;
+      h += `<div class="qrow"><button class="btn k" data-act="srv">⇄ Switch server (fix)</button></div>`;
+      h += `<div class="bar"><button class="btn k" data-act="undo" ${m.undo ? '' : 'disabled'}>↶ UNDO</button><button class="btn c" data-act="stats">Stats</button><button class="btn d" data-act="end">End match</button></div>`;
+    }
+    app.innerHTML = h;
+  }
+
+  const LABEL = { point: 'Point', ace: 'ACE', winner: 'Winner', ue: 'Unforced error', df: 'Double fault' };
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+    const v = App.view; const act = b.dataset.act; const c = v && v.courts[court]; const m = c && c.current;
+    if (act === 'court') { if (window.__AJT_DEMO) { court = b.dataset.c; render(v); return; } localStorage.setItem('ajt_court', b.dataset.c); location.href = '/umpire?court=' + b.dataset.c; return; }
+    if (act === 'switch') { if (window.__AJT_DEMO) return; if (confirm('Switch to a different court?')) { localStorage.removeItem('ajt_court'); location.href = '/umpire?pick=1'; } return; }
+    if (!c) return;
+    const base = { court, matchId: m ? m.id : undefined };
+    if (act === 'pt') {
+      if (!guard()) return; ok();
+      const s = +b.dataset.s, k = b.dataset.k; const r = await App.send(Object.assign({ type: 'point', side: s, kind: k }, base));
+      if (r.ok) App.toast(`${LABEL[k]} — ${App.sideLabel(m.names[s]).split('/')[0].trim()}`); return;
+    }
+    if (act === 'fault') { if (!guard()) return; ok(); App.send(Object.assign({ type: 'fault' }, base)); return; }
+    if (act === 'undo') { if (!guard()) return; ok(); const r = await App.send(Object.assign({ type: 'undo' }, base)); if (r.ok) App.toast('Undone'); return; }
+    if (act === 'srv') { App.send(Object.assign({ type: 'set_server', side: 1 - m.server }, base)); return; }
+    if (act === 'end') { App.endMatchDialog(court); return; }
+    if (act === 'stats') { App.modal({ title: 'Match stats', body: App.statRowsHTML(m) + '<div style="margin-top:10px">' + App.gameLogHTML(m) + '</div>' }); return; }
+    if (act === 'next') { App.send({ type: 'start_next', court }); return; }
+    if (act === 'skipwarm') { App.send({ type: 'skip_warmup', court }); return; }
+    if (act === 'addwarm') { App.send({ type: 'add_warmup', court, minutes: 1 }); return; }
+    if (act === 'abort') { App.send({ type: 'abort_current', court }); return; }
+    if (act === 'start') { ok(); App.send(Object.assign({ type: 'start_match', server: +b.dataset.s }, base)); return; }
+  });
+
+  App.connect({ role: 'umpire', court, onState: render, onStatus: (s) => { online = s; if (App.view) render(App.view); } });
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(() => {}); } catch (e) { /* needs https; harmless */ }
+})();
+</script>
+</body>
+</html>
