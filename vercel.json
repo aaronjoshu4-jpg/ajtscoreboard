@@ -1,29 +1,14 @@
 {
-  "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
-    {
-      "source": "/photos/:file",
-      "destination": "/api/photos/:file"
-    }
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/photos/:file", "destination": "/api/index" }
   ],
   "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "no-referrer"
-        }
-      ]
-    }
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "no-referrer" }
+    ] }
   ]
 }
