@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>window.AJT_CLOUD=1</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control Center — AJT Tennis Club</title>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  body { font-size: 15px; min-height: 100%; }
+  .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 18px; padding: 10px 20px; background: rgba(11, 6, 18, .94); border-bottom: 3px solid var(--p5); flex-wrap: wrap; }
+  .top .brand { font-family: var(--f-disp); font-size: 30px; letter-spacing: .04em; line-height: 1; }
+  .top .brand small { display: block; font-family: var(--f-body); font-size: 11px; letter-spacing: .3em; color: var(--green); font-weight: 800; }
+  .navs { display: flex; gap: 6px; }
+  .nav { border: 2px solid var(--p5); background: #170a2b; color: var(--cream); padding: 7px 16px; border-radius: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 14px; }
+  .nav.on { background: var(--orange); color: #1b0a00; border-color: #000; }
+  .stat { margin-left: auto; display: flex; gap: 16px; align-items: center; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--mut); flex-wrap: wrap; }
+  .page { display: none; padding: 16px 20px 60px; } .page.on { display: block; }
+  .dash { display: grid; grid-template-columns: 1fr 1fr 380px; gap: 16px; align-items: start; }
+  .col { display: grid; gap: 12px; }
+  .court { font-size: 14px; }
+  .ctl { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
+  .ctl .btn { flex: 1 1 auto; }
+  h4 { margin: 0 0 8px; font-family: var(--f-disp); font-weight: 400; font-size: 22px; letter-spacing: .06em; color: var(--cream); }
+  label.f { display: grid; gap: 4px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; color: var(--mut); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .form { display: grid; gap: 10px; }
+  .log { max-height: 420px; overflow: auto; font-size: 13px; display: grid; gap: 3px; }
+  .log div { padding: 4px 6px; border-radius: 5px; background: rgba(255, 255, 255, .04); }
+  .log b { color: var(--orange2); margin-right: 6px; } .log .c1 b { color: var(--green); } .log time { color: var(--mut); margin-right: 8px; font-variant-numeric: tabular-nums; }
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .pcard { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px; border: 2px solid var(--p5); border-radius: 12px; background: rgba(0, 0, 0, .25); }
+  .pcard .nm { font-family: var(--f-disp); font-size: 22px; letter-spacing: .04em; line-height: 1; }
+  .pcard input { padding: .3em .5em; font-size: 13px; margin-top: 6px; }
+  .pcard .bt { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+  #drop { border: 3px dashed var(--p4); border-radius: 14px; padding: 18px; text-align: center; color: var(--mut); font-weight: 800; letter-spacing: .06em; margin-bottom: 12px; }
+  #drop.over { border-color: var(--green); background: rgba(157, 255, 46, .08); color: var(--green); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pill { padding: 3px 10px; border-radius: 20px; background: var(--p6); font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+  .urls { display: grid; gap: 8px; } .urls code { background: #0b0612; padding: 6px 10px; border-radius: 6px; display: block; font-size: 14px; color: var(--green); word-break: break-all; }
+  .raffle-roll { font-family: var(--f-disp); font-size: 64px; text-align: center; color: var(--green); min-height: 1.2em; }
+  @media (max-width: 1250px) { .dash { grid-template-columns: 1fr 1fr; } .dash .side { grid-column: 1 / -1; } .two, .three { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="spooky-bg">
+<div class="top">
+  <div class="brand">AJT CONTROL CENTER<small>HALLOWEEN PARTY · OCT 31</small></div>
+  <div class="navs" id="navs">
+    <button class="nav on" data-p="dash">Courts</button><button class="nav" data-p="players">Players</button><button class="nav" data-p="awards">Awards</button><button class="nav" data-p="tv">TV &amp; Display</button><button class="nav" data-p="data">Data</button><button class="nav" data-p="settings">Settings &amp; Data</button>
+  </div>
+  <div class="stat"><span id="conn"><span class="dot"></span> connecting</span><span id="dots"></span><button class="btn sm c" id="links">Share links</button></div>
+</div>
+
+<!-- ========== COURTS ========== -->
+<div class="page on" id="p-dash">
+  <div class="dash">
+    <div id="courts" style="display:contents"></div>
+    <div class="col side">
+      <div class="panel"><h4>Add match</h4>
+        <div class="form">
+          <label class="f">Court<select id="am-court"></select></label>
+          <div class="f" style="font-weight:800;letter-spacing:.08em;color:var(--orange2);margin-top:4px">TEAM A</div>
+          <div class="row2"><label class="f">Player 1<input id="am-a1" list="names" placeholder="Name" autocomplete="off"></label><label class="f">Player 2<input id="am-a2" list="names" placeholder="Partner" autocomplete="off"></label></div>
+          <div class="f" style="font-weight:800;letter-spacing:.08em;color:var(--green)">TEAM B</div>
+          <div class="row2"><label class="f">Player 1<input id="am-b1" list="names" placeholder="Name" autocomplete="off"></label><label class="f">Player 2<input id="am-b2" list="names" placeholder="Partner" autocomplete="off"></label></div>
+          <label style="display:flex;gap:8px;align-items:center;font-weight:700"><input type="checkbox" id="am-warm" style="width:auto"> Force 3-min warm-up for this match</label>
+          <button class="btn o" id="am-add">Add to queue</button>
+        </div>
+        <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:800;letter-spacing:.08em;color:var(--orange2)">BULK ADD (paste a schedule)</summary>
+          <div class="form" style="margin-top:8px"><label class="f">Court<select id="bk-court"></select></label>
+          <label class="f">One match per line — doubles: “Anna / Ben vs Cy / Di”<textarea id="bk-text" rows="6" placeholder="Anna / Ben vs Cy / Di&#10;Eli / Fay vs Gus / Hal&#10;Ivy / Jo vs Kim / Lee"></textarea></label>
+          <button class="btn g" id="bk-add">Add all</button></div></details>
+          <div class="panel" style="margin-top:12px"><h4>Halloween lineup</h4>
+            <p class="mut" style="font-size:13px;margin:0 0 8px">Loads both courts’ rosters and the full shuffle-doubles schedule (partners rotate, everyone plays at least 3, nobody plays back-to-back). Only press once.</p>
+            <button class="btn o" id="lineup-load">Load Halloween lineup</button> <span class="mut" id="lineup-msg"></span></div>
+        <datalist id="names"></datalist>
+      </div>
+      <div class="panel"><h4>Event log</h4><div class="log" id="log"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PLAYERS ========== -->
+<div class="page" id="p-players">
+  <div class="two">
+    <div class="panel"><h4>Roster (one name per line)</h4><p class="mut" style="margin:0 0 10px">Everyone listed shows in the rankings from the start. For doubles, type <b>Anna / Ben</b> when creating the match.</p><div id="rosters" class="form"></div><button class="btn o" id="roster-save" style="margin-top:10px">Save roster</button></div>
+    <div class="panel"><h4>Rankings</h4><div id="rankings"></div></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h4>Player profiles — photo &amp; Reclub link</h4>
+    <div id="drop">Drop photos here — name each file after the player (e.g. <i>Anna Cruz.jpg</i>) and they match automatically</div>
+    <p class="mut" style="margin:0 0 10px;font-size:13px">Save each player’s Reclub profile picture beforehand (with their OK) and drop them in. Photos are stored on this laptop, so they show even without internet.</p>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+</div>
+
+<!-- ========== AWARDS ========== -->
+<div class="page" id="p-awards">
+  <div class="two">
+    <div class="col">
+      <div class="panel"><h4>👑 Top player per court (automatic)</h4><div id="topcards" class="two"></div></div>
+      <div class="panel"><h4>Best dressed</h4><div class="form" id="dressed">
+        <label class="f">🎃 Spooky<input data-cat="spooky" list="names" placeholder="Winner name"></label>
+        <label class="f">🤪 Goofy<input data-cat="goofy" list="names" placeholder="Winner name"></label>
+        <label class="f">⚡ Legendary<input data-cat="legendary" list="names" placeholder="Winner name"></label>
+      </div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h4>🎟️ Raffle</h4>
+        <label class="f">Entrants (one per line)<textarea id="entrants" rows="5"></textarea></label>
+        <div style="display:flex;gap:8px;margin:8px 0"><button class="btn o" id="ent-save">Save entrants</button><button class="btn k" id="ent-all">Fill with all players</button></div>
+        <div class="row3" style="grid-template-columns:1fr 1.4fr auto;align-items:end"><label class="f">Brand<input id="pz-brand" placeholder="Brand"></label><label class="f">Prize<input id="pz-prize" placeholder="e.g. Racket bag"></label><button class="btn g" id="pz-add">Add</button></div>
+        <div id="prizes" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TV ========== -->
+<div class="page" id="p-tv">
+  <div class="two">
+    <div class="panel"><h4>TV remote</h4><div class="form">
+      <label style="display:flex;gap:8px;align-items:center;font-weight:800"><input type="checkbox" id="tv-auto" style="width:auto"> Auto-rotate tabs</label>
+      <label class="f">Seconds per tab<input type="number" id="tv-int" min="6" max="120"></label>
+      <div class="mut" style="font-weight:800;letter-spacing:.1em">SHOW TAB NOW (turns auto-rotate off)</div>
+      <div class="row2"><button class="btn o" data-tv="live">Live scores</button><button class="btn o" data-tv="next">Up next</button><button class="btn o" data-tv="rank">Top players</button><button class="btn o" data-tv="awards">Awards</button></div>
+      <button class="btn k" id="tv-save">Save rotation settings</button>
+    </div></div>
+    <div class="panel"><h4>Ticker message</h4><div class="form">
+      <label class="f">Scrolls along the bottom of the TV<input id="tk" maxlength="200"></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn o" id="tk-save">Update ticker</button>
+      <button class="btn k sm" data-tk="Costume contest starts soon — head to the café!">Costume contest</button><button class="btn k sm" data-tk="Raffle draw coming up — keep your tickets ready!">Raffle</button><button class="btn k sm" data-tk="Photo time! Show us your best spooky pose">Photo time</button></div></div>
+      <h4 style="margin-top:18px">Event details (top-right tag)</h4><div class="form"><div class="row2"><label class="f">Date<input id="ev-date"></label><label class="f">Time<input id="ev-time"></label></div><div class="row2"><label class="f">Venue<input id="ev-venue"></label><label class="f">Title<input id="ev-sub"></label></div><button class="btn k" id="ev-save">Save details</button></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h4>Open the screens</h4><div class="urls" id="urls2"></div></div>
+</div>
+
+<!-- ========== SETTINGS ========== -->
+<div class="page" id="p-data">
+  <div class="panel" style="margin-bottom:14px"><h4>All saved data</h4>
+    <div id="d-sum" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
+    <div class="form" style="grid-auto-flow:column;grid-auto-columns:max-content;gap:8px;display:flex;flex-wrap:wrap">
+      <a class="btn c" href="/api/export/matches.csv">Download match results (CSV)</a>
+      <a class="btn c" href="/api/export/log.csv">Download event log (CSV)</a>
+      <a class="btn c" href="/api/export/state.json">Download full backup (JSON)</a></div>
+    <p class="mut" style="font-size:13px;margin:10px 0 0" id="d-where">Everything is saved automatically after every tap.</p></div>
+  <div class="panel" style="margin-bottom:14px"><h4>Match results &amp; stats</h4><div style="overflow:auto"><table class="rk" id="d-matches"></table></div></div>
+  <div class="panel"><h4>Players</h4><div style="overflow:auto"><table class="rk" id="d-players"></table></div></div>
+</div>
+<div class="page" id="p-settings">
+  <div class="two">
+    <div class="panel"><h4>Courts &amp; rules</h4><div class="form" id="set-courts"></div>
+      <div class="row2" style="margin-top:10px"><label class="f">Warm-up minutes (first match per court)<input type="number" id="set-warm" min="0" max="15"></label><label class="f">Sudden death at deuce #<input type="number" id="set-sd" min="1" max="5"></label></div>
+      <button class="btn o" id="set-save" style="margin-top:10px">Save settings</button>
+      <p class="mut" style="font-size:13px">Applies to queued and in-progress matches. Changing a court’s level moves it to that ranking group.</p></div>
+    <div class="col">
+      <div class="panel"><h4>Backup &amp; export</h4><div class="form">
+        <a class="btn c" href="/api/export/matches.csv">Download match results (CSV)</a>
+        <a class="btn c" href="/api/export/log.csv">Download event log (CSV)</a>
+        <a class="btn c" href="/api/export/state.json">Download full backup (JSON)</a>
+        <a class="btn c" href="/api/export/events.jsonl">Download every scoring tap (JSONL)</a>
+        <label class="f">Restore from a backup file<input type="file" id="imp" accept=".json"></label>
+        <p class="mut" style="margin:0;font-size:13px">The server also saves automatically after every action and keeps rolling backups in <code>data/backups</code>.</p></div></div>
+      <div class="panel"><h4>Website mirror</h4><div id="pubstat" class="mut">…</div></div>
+      <div class="panel"><h4>Danger zone</h4><div class="form"><button class="btn sm k" id="pin">Enter control PIN on this device</button><button class="btn d" id="reset">Reset event data (keeps roster, photos &amp; settings)</button></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="/engine.js"></script>
+<script src="/common.js"></script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)], esc = App.esc;
+  let page = 'dash', info = null, filled = {}, lastSig = {};
+  const val = (s) => $(s).value.trim();
+  const setIfBlurred = (el, v) => { if (document.activeElement !== el) el.value = v; };
+
+  /* ---------- tabs ---------- */
+  $('#navs').addEventListener('click', (e) => { const b = e.target.closest('.nav'); if (!b) return; page = b.dataset.p; $$('.nav').forEach((x) => x.classList.toggle('on', x === b)); $$('.page').forEach((p) => p.classList.toggle('on', p.id === 'p-' + page)); if (App.view) renderAll(App.view); });
+
+  /* ---------- court panels ---------- */
+  function controls(c) {
+    const m = c.current, q = (App.view.queue[c.id] || []); const b = (a, label, cls, extra) => `<button class="btn ${cls || 'k'}" data-ca="${a}" data-c="${c.id}" ${extra || ''}>${label}</button>`;
+    if (!m || m.status === 'finished') return (m ? b('undo', '↶ Undo last point', 'k', m.undo ? '' : 'disabled') : '') + b('next', q.length ? 'Start next match' : 'No matches queued', 'o', q.length ? '' : 'disabled');
+    if (m.status === 'warmup') return b('addwarm', '+1 min', 'k') + b('skipwarm', 'Skip warm-up', 'o') + b('abort', 'Back to queue', 'k');
+    if (m.status === 'ready') return b('start0', `${esc(App.sideLabel(m.names[0]))} serves`, 'o') + b('start1', `${esc(App.sideLabel(m.names[1]))} serves`, 'g') + b('abort', 'Back to queue', 'k');
+    return b('pt0', '+ Pt A', 'o') + b('pt1', '+ Pt B', 'g') + b('undo', '↶ Undo', 'k', m.undo ? '' : 'disabled') + b('adjust', 'Adjust…', 'k') + b('end', 'End match…', 'd');
+  }
+  function renderData(v) {
+    const live = Object.values(v.courts).map((c) => c.current).filter(Boolean);
+    const all = live.concat(v.completed.slice().reverse());          // oldest finished first, live matches at the top
+    const done = v.completed.length, queued = Object.values(v.queue).reduce((a, q) => a + q.length, 0), pl = Object.keys(v.players || {}).length || Object.values(v.roster || {}).reduce((a, r) => a + r.length, 0);
+    const chip = (k, n) => `<span class="tag" style="font-size:15px">${k}: <b>${n}</b></span>`;
+    $('#d-sum').innerHTML = chip('Matches finished', done) + chip('On court now', live.filter((m) => m.status === 'live' || m.status === 'warmup').length) + chip('Queued', queued) + chip('Players', pl) + chip('Actions logged', (v.log || []).length);
+    $('#d-where').innerHTML = v.mode === 'cloud' ? 'Saved automatically in your <b>Supabase</b> database (table <code>ajt_kv</code>) after every tap, so nothing is lost if a page is closed. Use the downloads above for an Excel copy.' : 'Saved automatically on the laptop (<code>data/state.json</code>) after every tap, with rolling backups.';
+    const side = (m, i) => esc(App.sideLabel(m.names[i]));
+    const st = (m, k) => (m.stats ? `${m.stats[0][k]}–${m.stats[1][k]}` : '–');
+    $('#d-matches').innerHTML = '<thead><tr><th>#</th><th>Court</th><th>Team A</th><th>Score</th><th>Team B</th><th>Result</th><th>Pts</th><th>Aces</th><th>DF</th><th>Winners</th><th>UE</th><th>BP won</th></tr></thead><tbody>' + (all.length ? all.map((m) => {
+      const res = m.status === 'finished' ? (m.winner === -1 ? 'Draw' : esc(App.sideLabel(m.names[m.winner])) + ' won') : esc(m.status.toUpperCase());
+      const bp = m.stats ? `${m.stats[0].bpWon}/${m.stats[0].bpOpp}–${m.stats[1].bpWon}/${m.stats[1].bpOpp}` : '–';
+      return `<tr><td>${m.no || ''}</td><td>${esc((v.courts[m.court] && v.courts[m.court].cfg.name) || m.court)}</td><td>${side(m, 0)}</td><td class="pt">${m.games[0]}–${m.games[1]}</td><td>${side(m, 1)}</td><td>${res}</td><td>${st(m, 'pts')}</td><td>${st(m, 'aces')}</td><td>${st(m, 'df')}</td><td>${st(m, 'winners')}</td><td>${st(m, 'ue')}</td><td>${bp}</td></tr>`;
+    }).join('') : '<tr><td colspan="12" class="mut">No matches yet.</td></tr>') + '</tbody>';
+    const rows = Object.entries(v.rankings || {}).flatMap(([lvl, r]) => r.map((x) => Object.assign({ lvl }, x)));
+    $('#d-players').innerHTML = '<thead><tr><th>Group</th><th>#</th><th>Player</th><th>W-L-D</th><th>Game diff</th><th>Win streak</th><th>Form</th><th>Points</th></tr></thead><tbody>' + (rows.length ? rows.map((r) => `<tr><td>${esc(r.lvl)}</td><td class="rn">${r.rank}</td><td class="nm">${App.avatar(r.name, '1.1em')} ${esc(App.dispName(r.name))}</td><td>${r.W}-${r.L}-${r.D || 0}</td><td>${r.GD > 0 ? '+' : ''}${r.GD}</td><td>${r.streak || '–'}</td><td>${(r.last || []).join(' ') || '–'}</td><td class="pt">${r.pts}</td></tr>`).join('') : '<tr><td colspan="8" class="mut">Add players on the Players tab.</td></tr>') + '</tbody>';
+  }
+
+  function renderDash(v) {
+    $('#courts').innerHTML = Object.values(v.courts).map((c) => `<div class="col">${App.courtCard(c)}<div class="ctl">${controls(c)}</div><div class="panel"><h4>Queue · ${esc(c.cfg.name)}</h4>${App.queueList(c.id, { controls: true })}</div></div>`).join('');
+    $('#log').innerHTML = (v.log || []).slice(-70).reverse().map((l) => `<div class="c${l.court}"><time>${new Date(l.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</time>${l.court ? `<b>C${esc(l.court)}</b>` : ''}${esc(l.text)}</div>`).join('') || '<div class="mut">Nothing yet.</div>';
+  }
+  $('#courts').addEventListener('click', async (e) => {
+    const v = App.view; const ca = e.target.closest('[data-ca]'), q = e.target.closest('[data-q]');
+    if (ca) {
+      const id = ca.dataset.c, c = v.courts[id], m = c.current, a = ca.dataset.ca, base = { court: id, matchId: m ? m.id : undefined };
+      if (a === 'next') return App.send({ type: 'start_next', court: id });
+      if (a === 'addwarm') return App.send({ type: 'add_warmup', court: id, minutes: 1 });
+      if (a === 'skipwarm') return App.send({ type: 'skip_warmup', court: id });
+      if (a === 'abort') return App.send({ type: 'abort_current', court: id });
+      if (a === 'start0' || a === 'start1') return App.send(Object.assign({ type: 'start_match', server: +a.slice(5) }, base));
+      if (a === 'pt0' || a === 'pt1') return App.send(Object.assign({ type: 'point', side: +a.slice(2), kind: 'point' }, base));
+      if (a === 'undo') return App.send(Object.assign({ type: 'undo' }, base));
+      if (a === 'end') return App.endMatchDialog(id);
+      if (a === 'adjust') return adjustDialog(id);
+    }
+    if (q) {
+      const id = q.dataset.id, act = q.dataset.q; const all = Object.values(v.queue).flat(); const m = all.find((x) => x.id === id); if (!m) return;
+      if (act === 'up' || act === 'down') return App.send({ type: 'move_queue', id, dir: act === 'up' ? -1 : 1 });
+      if (act === 'del') { if (confirm(`Remove ${m.names[0]} vs ${m.names[1]} from the queue?`)) App.send({ type: 'remove_queued', id }); return; }
+      if (act === 'swap') { const ids = Object.keys(v.courts); const other = ids.find((x) => x !== m.court); return App.send({ type: 'edit_match', id, court: other }); }
+      if (act === 'edit') { const a = prompt('Player / team A', m.names[0]); if (a === null) return; const b = prompt('Player / team B', m.names[1]); if (b === null) return; return App.send({ type: 'edit_match', id, a, b }); }
+    }
+  });
+  function adjustDialog(id) {
+    const m = App.view.courts[id].current; if (!m || m.status !== 'live') return;
+    App.modal({
+      title: 'Adjust score', body: `<div class="form"><div class="row2"><label class="f">Games · ${esc(App.sideLabel(m.names[0]))}<input type="number" id="ad-g0" min="0" value="${m.games[0]}"></label><label class="f">Games · ${esc(App.sideLabel(m.names[1]))}<input type="number" id="ad-g1" min="0" value="${m.games[1]}"></label></div>
+      <div class="row2"><label class="f">Points A (0=0 1=15 2=30 3=40)<input type="number" id="ad-p0" min="0" value="${m.points[0]}"></label><label class="f">Points B<input type="number" id="ad-p1" min="0" value="${m.points[1]}"></label></div>
+      <label class="f">Server<select id="ad-s"><option value="0" ${m.server === 0 ? 'selected' : ''}>${esc(App.sideLabel(m.names[0]))}</option><option value="1" ${m.server === 1 ? 'selected' : ''}>${esc(App.sideLabel(m.names[1]))}</option></select></label>
+      <div class="mut" style="font-size:13px">Use this to fix mistakes. You can undo it afterwards.</div></div>`,
+      buttons: [{ label: 'Apply', cls: 'o', fn: async () => { const r = await App.send({ type: 'adjust', court: id, matchId: m.id, games: [+$('#ad-g0').value, +$('#ad-g1').value], points: [+$('#ad-p0').value, +$('#ad-p1').value], server: +$('#ad-s').value }); return r.ok; } }, { label: 'Cancel', cls: 'k' }]
+    });
+  }
+
+  /* ---------- add match ---------- */
+  async function addMatch() {
+    const side = (x, y) => [val(x), val(y)].filter(Boolean).join(' / ');   // doubles: "Anna / Ben"; leave Player 2 empty for singles
+    const r = await App.send({ type: 'create_match', court: $('#am-court').value, a: side('#am-a1', '#am-a2'), b: side('#am-b1', '#am-b2'), warmup: $('#am-warm').checked });
+    if (r.ok) { ['#am-a1', '#am-a2', '#am-b1', '#am-b2'].forEach((q) => { $(q).value = ''; }); $('#am-warm').checked = false; $('#am-a1').focus(); App.toast('Match added to queue'); }
+  }
+  $('#am-add').onclick = addMatch;
+  ['#am-a1', '#am-a2', '#am-b1', '#am-b2'].forEach((s) => $(s).addEventListener('keydown', (e) => { if (e.key === 'Enter') addMatch(); }));
+  $('#bk-add').onclick = async () => {
+    const rows = $('#bk-text').value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => { const p = l.split(/\s+(?:vs\.?|v|–|-)\s+/i); return p.length === 2 ? { a: p[0].trim(), b: p[1].trim() } : null; });
+    const good = rows.filter(Boolean); if (!good.length) return App.toast('Use the format “Anna vs Ben”', 'err');
+    const r = await App.send({ type: 'bulk_create', court: $('#bk-court').value, matches: good });
+    if (r.ok) { $('#bk-text').value = ''; App.toast(`Added ${r.added} matches${rows.length !== good.length ? ` (${rows.length - good.length} lines skipped)` : ''}`); }
+  };
+
+  /* ---------- one-click Halloween lineup ---------- */
+  const LINEUP = {"1": {"level": "Beginners", "roster": ["Tahn", "Ella", "Bei", "Francis", "Angie", "Angel", "Mark", "Marv", "Rayanne"], "matches": [{"a": "Marv / Rayanne", "b": "Angie / Angel"}, {"a": "Francis / Tahn", "b": "Mark / Ella"}, {"a": "Bei / Marv", "b": "Angel / Rayanne"}, {"a": "Francis / Ella", "b": "Mark / Angie"}, {"a": "Tahn / Rayanne", "b": "Bei / Angel"}, {"a": "Marv / Angie", "b": "Mark / Francis"}, {"a": "Bei / Rayanne", "b": "Ella / Tahn"}, {"a": "Marv / Angel", "b": "Francis / Angie"}]}, "2": {"level": "Intermediate", "roster": ["Ten", "Hannah", "Carmina", "Josh", "Ice", "Gelo", "Prey", "Bubu"], "matches": [{"a": "Carmina / Bubu", "b": "Prey / Josh"}, {"a": "Gelo / Ten", "b": "Hannah / Ice"}, {"a": "Carmina / Josh", "b": "Bubu / Prey"}, {"a": "Ice / Ten", "b": "Hannah / Gelo"}, {"a": "Prey / Carmina", "b": "Bubu / Josh"}, {"a": "Hannah / Ten", "b": "Gelo / Ice"}]}};
+  $('#lineup-load').onclick = async () => {
+    const q = Object.values((App.view && App.view.queue) || {}).flat().length;
+    if (q && !confirm(q + ' matches are already queued. Load the lineup anyway (adds more)?')) return;
+    let n = 0;
+    for (const [c, L] of Object.entries(LINEUP)) {
+      await App.send({ type: 'set_roster', level: L.level, names: L.roster });
+      const r = await App.send({ type: 'bulk_create', court: c, matches: L.matches });
+      if (r.ok) n += r.added;
+    }
+    $('#lineup-msg').textContent = n ? 'Loaded ' + n + ' matches.' : 'Nothing loaded — check the connection.';
+    if (n) App.toast('Lineup loaded: ' + n + ' matches');
+  };
+
+  /* ---------- players ---------- */
+  function allNames(v) {
+    const s = new Map(); const add = (n) => { const t = String(n).trim(); if (t) s.set(t.toLowerCase(), s.get(t.toLowerCase()) || t); };
+    Object.values(v.roster || {}).flat().forEach(add); Object.values(v.players || {}).forEach((p) => add(p.name));
+    Object.values(v.rankings || {}).flat().forEach((r) => add(r.name));
+    [...Object.values(v.queue).flat(), ...v.completed, ...Object.values(v.courts).map((c) => c.current).filter(Boolean)].forEach((m) => m.names.forEach((n) => App.sideNames(n).forEach(add)));
+    return [...s.values()].sort((a, b) => a.localeCompare(b));
+  }
+  function renderPlayers(v) {
+    const names = allNames(v);
+    const sig = JSON.stringify([names, Object.values(v.players || {}).map((p) => [p.name, p.photo, p.reclub])]);
+    if (sig !== lastSig.pg && !($('#pgrid').contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) {
+      lastSig.pg = sig;
+      $('#pgrid').innerHTML = names.map((n) => { const p = (v.players || {})[n.toLowerCase()] || {};
+        return `<div class="pcard">${App.avatar(n, '64px')}<div><div class="nm">${esc(n)}</div><input data-rc="${esc(n)}" value="${esc(p.reclub || '')}" placeholder="Reclub profile link (optional)"><div class="bt"><label class="btn sm k" style="margin:0">${p.photo ? 'Change photo' : 'Upload photo'}<input type="file" accept="image/*" hidden data-up="${esc(n)}"></label>${p.photo ? `<button class="btn sm k" data-clr="${esc(n)}">Remove</button>` : ''}${p.reclub ? `<a class="btn sm c" target="_blank" rel="noopener" href="${esc(p.reclub)}">Reclub ↗</a>` : ''}</div></div></div>`; }).join('') || '<div class="mut">Add names to the roster to create profiles.</div>';
+    }
+    const dl = names.map((n) => `<option value="${esc(n)}">`).join(''); if (dl !== lastSig.dl) { lastSig.dl = dl; $('#names').innerHTML = dl; }
+    const rs = JSON.stringify(v.roster) + Object.values(v.settings.courts).map((c) => c.level).join();
+    if (rs !== lastSig.rs) { lastSig.rs = rs;
+      const levels = [...new Set(Object.values(v.settings.courts).map((c) => c.level))];
+      if (!$('#rosters').contains(document.activeElement)) $('#rosters').innerHTML = levels.map((l) => `<label class="f">${esc(l)}<textarea rows="7" data-lvl="${esc(l)}">${esc((v.roster[l] || []).join('\n'))}</textarea></label>`).join('');
+    }
+    $('#rankings').innerHTML = Object.values(v.settings.courts).map((c) => `<div style="margin-bottom:14px"><span class="tag ${c.id === '1' ? 'g' : 'o'}">${esc(c.name)} · ${esc(c.level)}</span>${App.rankTable(c.level, { limit: 12 })}</div>`).join('');
+  }
+  $('#roster-save').onclick = async () => { for (const t of $$('#rosters textarea')) await App.send({ type: 'set_roster', level: t.dataset.lvl, names: t.value.split('\n') }); lastSig.rs = ''; App.toast('Roster saved'); };
+  $('#pgrid').addEventListener('change', async (e) => {
+    const up = e.target.closest('[data-up]'), rc = e.target.closest('[data-rc]');
+    if (up && up.files[0]) { if (await App.uploadPhoto(up.dataset.up, up.files[0])) App.toast('Photo saved'); }
+    if (rc) App.send({ type: 'set_player', name: rc.dataset.rc, reclub: rc.value.trim() });
+  });
+  $('#pgrid').addEventListener('click', (e) => { const c = e.target.closest('[data-clr]'); if (c) App.send({ type: 'set_player', name: c.dataset.clr, photo: '' }); });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach((ev) => document.addEventListener(ev, (e) => { if (page === 'players') { e.preventDefault(); drop.classList.add('over'); } }));
+  ['dragleave', 'drop'].forEach((ev) => document.addEventListener(ev, (e) => { if (ev === 'drop' || e.target === document) drop.classList.remove('over'); }));
+  document.addEventListener('drop', async (e) => {
+    if (page !== 'players') return; e.preventDefault();
+    const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/')); if (!files.length) return;
+    const known = allNames(App.view); let n = 0, created = 0;
+    for (const f of files) {
+      const base = f.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+      let name = known.find((k) => k.toLowerCase() === base.toLowerCase()); if (!name) { name = base; created++; }
+      if (await App.uploadPhoto(name, f)) n++;
+    }
+    App.toast(`${n} photo${n === 1 ? '' : 's'} saved${created ? ` (${created} new profile${created === 1 ? '' : 's'})` : ''}`);
+  });
+
+  /* ---------- awards ---------- */
+  function renderAwards(v) {
+    $('#topcards').innerHTML = App.topPlayerCards();
+    $$('#dressed input').forEach((i) => setIfBlurred(i, (v.awards.dressed || {})[i.dataset.cat] || ''));
+    if (document.activeElement !== $('#entrants')) setIfBlurred($('#entrants'), (v.awards.raffle.entrants || []).join('\n'));
+    $('#prizes').innerHTML = (v.awards.raffle.prizes || []).map((p) => `<div class="prize"><div><div class="b">${esc(p.brand || 'Prize')}</div><div>${esc(p.prize)}</div>${p.winner ? `<div class="w">🎉 ${esc(p.winner)}</div>` : ''}</div><div style="display:flex;gap:6px">${p.winner ? `<button class="btn sm k" data-pz="clear" data-id="${p.id}">Redraw</button>` : `<button class="btn sm o" data-pz="draw" data-id="${p.id}">Draw!</button>`}<button class="btn sm d" data-pz="del" data-id="${p.id}">✕</button></div></div>`).join('') || '<div class="mut">Add the prizes you’re giving away (brand + prize).</div>';
+  }
+  $('#dressed').addEventListener('change', (e) => { const i = e.target.closest('input'); if (i) App.send({ type: 'set_dressed', category: i.dataset.cat, winner: i.value }); });
+  $('#ent-save').onclick = async () => { const r = await App.send({ type: 'set_entrants', names: $('#entrants').value.split('\n') }); if (r.ok) App.toast('Entrants saved'); };
+  $('#ent-all').onclick = () => { $('#entrants').value = allNames(App.view).join('\n'); };
+  $('#pz-add').onclick = async () => { const r = await App.send({ type: 'add_prize', brand: val('#pz-brand'), prize: val('#pz-prize') }); if (r.ok) { $('#pz-brand').value = ''; $('#pz-prize').value = ''; } };
+  $('#prizes').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-pz]'); if (!b) return; const id = b.dataset.id, a = b.dataset.pz;
+    if (a === 'del') { if (confirm('Remove this prize?')) App.send({ type: 'remove_prize', id }); return; }
+    if (a === 'clear') return App.send({ type: 'clear_prize', id });
+    if (a === 'draw') {
+      const pool = (App.view.awards.raffle.entrants || []); if (!pool.length) return App.toast('Save the raffle entrants first', 'err');
+      const p = App.view.awards.raffle.prizes.find((x) => x.id === id);
+      let closeFn; const t0 = Date.now();
+      closeFn = App.modal({ title: `${p.brand ? p.brand + ' — ' : ''}${p.prize}`, body: '<div class="raffle-roll" id="roll">…</div>', buttons: [], sticky: true });
+      const iv = setInterval(() => { const el = $('#roll'); if (el) el.textContent = pool[Math.floor(Math.random() * pool.length)]; }, 70);
+      await new Promise((r) => setTimeout(r, 2400)); clearInterval(iv);
+      const r = await App.send({ type: 'draw_raffle', id });
+      closeFn();
+      if (r.ok) App.modal({ title: '🎉 Winner!', body: `<div class="raffle-roll">${esc(r.winner)}</div><div style="text-align:center">${App.avatar(r.winner, '96px')}</div>`, buttons: [{ label: 'Nice!', cls: 'o' }] });
+    }
+  });
+
+  /* ---------- TV & settings ---------- */
+  $$('[data-tv]').forEach((b) => b.onclick = () => App.send({ type: 'set_tv', tab: b.dataset.tv, auto: false }));
+  $('#tv-save').onclick = () => App.send({ type: 'set_tv', auto: $('#tv-auto').checked, interval: +$('#tv-int').value || 18 }).then((r) => r.ok && App.toast('Saved'));
+  $('#tk-save').onclick = () => App.send({ type: 'set_ticker', text: val('#tk') }).then((r) => r.ok && App.toast('Ticker updated'));
+  $$('[data-tk]').forEach((b) => b.onclick = () => { $('#tk').value = b.dataset.tk; $('#tk-save').click(); });
+  $('#ev-save').onclick = () => App.send({ type: 'set_event', date: val('#ev-date'), time: val('#ev-time'), venue: val('#ev-venue'), subtitle: val('#ev-sub') }).then((r) => r.ok && App.toast('Saved'));
+  $('#set-save').onclick = async () => {
+    const courts = {}; $$('#set-courts [data-cid]').forEach((d) => { const id = d.dataset.cid; courts[id] = { name: d.querySelector('.cn').value, level: d.querySelector('.cl').value, gamesTo: +d.querySelector('.cg').value }; });
+    const r = await App.send({ type: 'set_settings', courts, warmupMinutes: +$('#set-warm').value, suddenDeathAtDeuce: +$('#set-sd').value });
+    if (r.ok) { App.toast('Settings saved'); filled.settings = false; lastSig.rs = ''; }
+  };
+  function fillForms(v) {
+    if (!filled.tv) { filled.tv = true; $('#tv-auto').checked = v.tv.auto; $('#tv-int').value = v.tv.interval; $('#tk').value = v.ticker; $('#ev-date').value = v.event.date; $('#ev-time').value = v.event.time; $('#ev-venue').value = v.event.venue; $('#ev-sub').value = v.event.subtitle; }
+    if (!filled.settings) { filled.settings = true; $('#set-warm').value = v.settings.warmupMinutes; $('#set-sd').value = v.settings.suddenDeathAtDeuce;
+      $('#set-courts').innerHTML = Object.values(v.settings.courts).map((c) => `<div data-cid="${c.id}" class="row3"><label class="f">Court name<input class="cn" value="${esc(c.name)}"></label><label class="f">Level (ranking group)<input class="cl" value="${esc(c.level)}"></label><label class="f">Games to win<input class="cg" type="number" min="1" max="10" value="${c.gamesTo}"></label></div>`).join(''); }
+    const opts = Object.values(v.settings.courts).map((c) => `<option value="${c.id}">${esc(c.name)} · ${esc(c.level)} (to ${c.gamesTo})</option>`).join('');
+    ['#am-court', '#bk-court'].forEach((s) => { if ($(s).dataset.sig !== opts) { const cur = $(s).value; $(s).innerHTML = opts; $(s).dataset.sig = opts; if (cur) $(s).value = cur; } });
+  }
+  $('#imp').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return; let data; try { data = JSON.parse(await f.text()); } catch (er) { return App.toast('Not a valid backup file', 'err'); }
+    if (confirm('Replace ALL current event data with this backup?')) { const r = await App.send({ type: 'import_state', data }); if (r.ok) { filled = {}; lastSig = {}; App.toast('Backup restored'); } } e.target.value = '';
+  };
+  $('#reset').onclick = async () => { if (prompt('This clears all matches, scores and rankings. Type RESET to confirm.') === 'RESET') { const r = await App.send({ type: 'reset' }); if (r.ok) App.toast('Event data cleared'); } };
+  $('#pin').onclick = () => { const p = prompt('Control PIN for this device'); if (p !== null) { localStorage.setItem('ajt_pin', p); App.toast('PIN saved on this device'); } };
+
+  /* ---------- links ---------- */
+  async function loadInfo() { try { info = await (await fetch('/api/info')).json(); } catch (e) { /* offline */ } }
+  function urlsHTML() {
+    if (!info) return '<div class="mut">Loading…</div>'; const base = (info.ips && info.ips.length) ? `http://${info.ips[0]}:${info.port}` : location.origin;
+    const row = (l, u) => `<div><div class="mut" style="font-weight:800;letter-spacing:.1em;font-size:12px">${l}</div><code>${u}</code></div>`;
+    return row('TV SCREEN (open on the TV’s browser)', base + '/tv') + row('UMPIRE PHONE — COURT 1', base + '/umpire?court=1') + row('UMPIRE PHONE — COURT 2', base + '/umpire?court=2') + row('SPECTATORS (phones on the same Wi-Fi)', base + '/live') + (info.ips.length > 1 ? `<div class="mut" style="font-size:12px">Other network addresses: ${info.ips.join(', ')}</div>` : '') + `<div class="mut" style="font-size:12px">All devices must be on the same Wi-Fi / hotspot as this laptop.</div>`;
+  }
+  $('#links').onclick = () => App.modal({ title: 'Share links', body: `<div class="urls">${urlsHTML()}</div>` });
+
+  /* ---------- main render ---------- */
+  function renderAll(v) {
+    if (!v || v.empty) return;
+    fillForms(v);
+    if (page === 'dash') renderDash(v);
+    if (page === 'data') renderData(v);
+    if (page === 'players') renderPlayers(v); else { const dl = allNames(v).map((n) => `<option value="${esc(n)}">`).join(''); if (dl !== lastSig.dl) { lastSig.dl = dl; $('#names').innerHTML = dl; } }
+    if (page === 'awards') renderAwards(v);
+    if (page === 'tv') { $('#urls2').innerHTML = urlsHTML(); }
+    if (page === 'settings') { const p = (info && info.publish) || {}; $('#pubstat').innerHTML = p.url ? `Publishing to <b>${esc(p.url)}</b><br>Status: ${esc(p.status)}` : 'Not publishing. To mirror live scores to your website, start the server with <code>PUBLISH_URL</code> and <code>PUBLISH_KEY</code> (see README).'; }
+    $('#dots').innerHTML = App.dotsHTML(v.clients || {});
+  }
+  App.connect({ role: 'control', onState: renderAll, onStatus: (s) => { $('#conn').innerHTML = `<span class="dot ${s ? 'on' : ''}"></span> ${s ? 'connected' : 'offline'}`; } });
+  loadInfo(); setInterval(loadInfo, 20000);
+})();
+</script>
+</body>
+</html>
