@@ -754,8 +754,9 @@ const handle = async (req) => {
       if (tooMany(ip)) return json(429, { ok: false, error: 'Too many attempts. Try again in a few minutes.' });
       let code = ''; try { code = String((await req.json()).code || '').trim(); } catch (e) { /* empty */ }
       if (!VIEW_CODE()) return json(200, { ok: true });
-      if (!same(code, VIEW_CODE())) { noteFail(ip); return json(401, { ok: false, error: 'That code is not right.' }); }
-      return json(200, { ok: true }, { 'set-cookie': `ajt_view=${viewToken()}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 3}` });
+      const level = pinLevel(code);    // staff can sign in with their PIN alone; the same box also takes the guest access code
+      if (!same(code, VIEW_CODE()) && !level) { noteFail(ip); return json(401, { ok: false, error: 'That code is not right.' }); }
+      return json(200, { ok: true, level }, { 'set-cookie': `ajt_view=${viewToken()}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}` });
     }
 
     if (!isAuthed(req)) return json(401, { ok: false, error: 'Access code required' });
