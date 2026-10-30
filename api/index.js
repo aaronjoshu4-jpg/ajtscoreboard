@@ -827,7 +827,7 @@ const handle = async (req) => {
     return json(404, { ok: false, error: 'Not found' });
   } catch (e) {
     console.error(e);
-    return json(500, { ok: false, error: 'Server error — try again' });
+    return json(500, { ok: false, error: 'Server error: ' + String((e && e.message) || e).replace(/eyJ[\w.-]+/g, '***').slice(0, 220) });
   }
 };
 
